@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List Videos</title>
+    <script>
+        let intervalId = null;
+
+        function fetchVideos(screen_number) {
+            fetch(`/api/videos/${screen_number}`)
+                .then(response => response.json())
+                .then(videos => {
+                    const videoList = document.getElementById('video-list');
+                    videoList.innerHTML = '';
+                    videos.forEach(video => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<input type="checkbox" name="videos" value="${video}"> ${video}`;
+                        videoList.appendChild(li);
+                    });
+                });
+        }
+
+        function toggleAutoRefresh() {
+            const screenNumber = {{ screen_number }};
+            const button = document.getElementById('toggle-refresh');
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+                button.textContent = 'Start Auto Refresh';
+            } else {
+                fetchVideos(screenNumber); // Fetch immediately
+                intervalId = setInterval(() => fetchVideos(screenNumber), 60000); // Refresh every 1 minute
+                button.textContent = 'Stop Auto Refresh';
+            }
+        }
+
+        function toggleSelectAll(source) {
+            checkboxes = document.getElementsByName('videos');
+            for(let i = 0, n = checkboxes.length; i < n; i++) {
+                checkboxes[i].checked = source.checked;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const screenNumber = {{ screen_number }};
+            fetchVideos(screenNumber); // Fetch immediately on load
+        });
+    </script>
+</head>
+<body>
+    <h1>Videos for Screen {{ screen_number }}</h1>
+    <button id="toggle-refresh" onclick="toggleAutoRefresh()">Start Auto Refresh</button>
+    <form method="post" action="/download">
+        <input type="hidden" name="screen_number" value="{{ screen_number }}">
+        <label><input type="checkbox" onClick="toggleSelectAll(this)"> Select All</label>
+        <ul id="video-list">
+        </ul>
+        <br>
+        <input type="submit" value="Download">
+    </form>
+    <br>
+    <a href="/logout">Logout</a>
+</body>
+</html>
